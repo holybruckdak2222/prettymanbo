@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitDrim AI - 스마트 맞춤 코디 솔루션</title>
+    <!-- Pretendard 표준 폰트 적용 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --primary-light: #EEF2FF;
+            --dark-bg: #0F172A;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --accent: #10B981;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05);
+            --shadow-lg: 0 20px 30px -10px rgba(99, 102, 241, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, sans-serif; }
+        
+        body {
+            background-color: #F8FAFC;
+            color: var(--text-main);
+            padding: 40px 16px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            padding: 36px 32px;
+            position: relative;
+        }
+
+        /* 헤더 디자인 */
+        header { text-align: center; margin-bottom: 28px; }
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        header h1 {
+            font-size: 1.75rem;
+            color: var(--dark-bg);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+        }
+        header p { font-size: 0.92rem; color: var(--text-muted); }
+
+        /* 단계별 인디케이터 */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15%;
+            right: 15%;
+            height: 2px;
+            background: var(--border);
+            z-index: 1;
+        }
+        .step-item {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #F1F5F9;
+            color: var(--text-muted);
+            border: 2px solid var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .step-item.active .step-circle {
+            background: var(--primary);
+            color: #FFFFFF;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+        .step-item.completed .step-circle {
+            background: var(--dark-bg);
+            color: #FFFFFF;
+        }
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .step-item.active .step-label { color: var(--primary); font-weight: 700; }
+
+        /* Step 컨텐츠 전환 */
+        .step-content { display: none; animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .step-content.active { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header { margin-bottom: 20px; }
+        .step-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--dark-bg); }
+        .step-header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* 파일 업로드 영역 */
+        .upload-box {
+            border: 2px dashed #CBD5E1;
+            border-radius: var(--radius-lg);
+            padding: 32px 20px;
+            text-align: center;
+            background: #F8FAFC;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-box:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            box-shadow: var(--shadow-sm);
+            font-size: 1.2rem;
+        }
+        .upload-box h3 { font-size: 0.95rem; font-weight: 700; color: var(--dark-bg); margin-bottom: 4px; }
+        .upload-box p { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* 업로드된 아이템 리스트 */
+        .wardrobe-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+        .wardrobe-card {
+            position: relative;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+        .wardrobe-card img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .wardrobe-card select {
+            width: 100%;
+            margin-top: 6px;
+            padding: 4px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #F8FAFC;
+            outline: none;
+        }
+        .btn-remove {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #FFF;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        /* 그리드 옵션 선택 카드 (목적 & 스타일) */
+        .grid-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option-card {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .option-card:hover { border-color: #A5B4FC; transform: translateY(-2px); }
+        .option-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+        .option-icon { font-size: 1.25rem; }
+        .option-text h4 { font-size: 0.88rem; font-weight: 700; color: var(--dark-bg); }
+        .option-text p { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* 폼 라벨 및 입력창 */
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--dark-bg);
+            margin-bottom: 6px;
+        }
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background-color: #FFFFFF;
+            font-size: 0.9rem;
+            color: var(--dark-bg);
+            outline: none;
+            transition: all 0.2s;
+        }
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        /* 버튼 하단 영역 */
+        .actions { display: flex; gap: 12px; margin-top: 28px; }
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: #FFFFFF; box-shadow: var(--shadow-lg); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-secondary { background: #F1F5F9; color: var(--dark-bg); }
+        .btn-secondary:hover { background: #E2E8F0; }
+
+        /* 로딩 애니메이션 화면 */
+        .loading-state { text-align: center; padding: 40px 20px; display: none; }
+        .ai-pulse {
+            width: 56px;
+            height: 56px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 20px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            70% { box-shadow: 0 0 0 18px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* 결과 화면 UI 구조 */
+        .result-card {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .result-tag {
+            display: inline-block;
+            background: var(--dark-bg);
+            color: #FFF;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--dark-bg);
+            margin: 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 무조건 추천되는 기본 3종 (상의, 하의, 신발) */
+        .default-combination {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .combo-item {
+            background: #FFF;
+            border: 1.5px solid var(--primary-light);
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .combo-item.default-item {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+        }
+
+        .combo-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: var(--primary);
+            color: white;
+            font-size: 0.62rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .combo-item img {
+            width: 100%;
+            height: 85px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .combo-item .placeholder-img {
+            width: 100%;
+            height: 85px;
+            background: #F1F5F9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 12px;
+        }
+
+        .combo-item span.item-cat {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--dark-bg);
+        }
+
+        /* 추가 레이어 (아우터/잡화 등) */
+        .extra-combination {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .extra-item {
+            background: #FFF;
+            border: 1px dashed #CBD5E1;
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+            width: 100px;
+            flex-shrink: 0;
+        }
+        .extra-item img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .extra-item span {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .report-box {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-top: 16px;
+        }
+        .report-box h4 { font-size: 0.88rem; font-weight: 700; color: var(--dark-bg); margin-bottom: 8px; }
+        .report-list { list-style: none; }
+        .report-list li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+        .report-list li::before {
+            content: '•';
+            position: absolute;
+            left: 4px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="brand-badge">✨ AI Fashion Engine 2.0</div>
+        <h1>FitDrim Smart Look</h1>
+        <p>내 옷장 데이터와 개인 프로필 기반 AI 스태이징 솔루션</p>
+    </header>
+
+    <!-- 3단계 인디케이터 -->
+    <div class="stepper">
+        <div class="step-item active" id="indicator1">
+            <div class="step-circle">1</div>
+            <div class="step-label">옷장 등록</div>
+        </div>
+        <div class="step-item" id="indicator2">
+            <div class="step-circle">2</div>
+            <div class="step-label">TPO / 스타일</div>
+        </div>
+        <div class="step-item" id="indicator3">
+            <div class="step-circle">3</div>
+            <div class="step-label">프로필 / 날씨</div>
+        </div>
+    </div>
+
+    <!-- STEP 1: 내 옷장 업로드 -->
+    <div class="step-content active" id="step1">
+        <div class="step-header">
+            <h2>1. 보유 의류 업로드</h2>
+            <p>오늘 코디 후보에 올릴 옷 사진을 등록하세요 (상의, 하의, 신발 권장)</p>
+        </div>
+
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📸</div>
+            <h3>의류 사진을 드래그하거나 클릭하여 업로드</h3>
+            <p>상의, 하의, 아우터, 신발 등 자유롭게 선택 가능 (PNG, JPG)</p>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        </div>
+
+        <div class="wardrobe-grid" id="wardrobeGrid"></div>
+
+        <div class="actions">
+            <button class="btn btn-primary" onclick="validateAndNext(2)">다음 단계로 계속 →</button>
+        </div>
+    </div>
+
+    <!-- STEP 2: 외출 목적 & 스타일 -->
+    <div class="step-content" id="step2">
+        <div class="step-header">
+            <h2>2. 외출 목적 & 타겟 스타일</h2>
+            <p>상황에 알맞은 코디의 분위기를 지정합니다.</p>
+        </div>
+
+        <div class="form-group">
+            <label>오늘의 외출 목적 (TPO)</label>
+            <div class="grid-options">
+                <div class="option-card selected" onclick="selectPurpose(this, '데이트 / 소개팅')">
+                    <span class="option-icon">💖</span>
+                    <div class="option-text">
+                        <h4>데이트 / 소개팅</h4>
+                        <p>호감도를 높이는 룩</p>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectPurpose(this, '출근 / 비즈니스')">
+                    <span class="option-icon">💼</span>
+                    <div class="option-text">
+                        <h4>출근 / 비즈니스</h4>
+                        <p>신뢰감을 주는 포멀 룩</p>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectPurpose(this, '결혼식 / 하객룩')">
+                    <span class="option-icon">💍</span>
+                    <div class="option-text">
+                        <h4>결혼식 / 하객</h4>
+                        <p>단정하고 격식있는 룩</p>
+                    </div>
+                </div>
+                <div class="option-card" onclick="selectPurpose(this, '친구 모임 / 약속')">
+                    <span class="option-icon">☕</span>
+                    <div class="option-text">
+                        <h4>친구 모임</h4>
+                        <p>편안하고 트렌디한 룩</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="stylePreference">선호하는 스타일 무드</label>
+            <select id="stylePreference">
+                <option value="minimal">미니멀 & 댄디 (Minimal & Dandy)</option>
+                <option value="casual">이지 캐주얼 (Easy Casual)</option>
+                <option value="street">스트릿 & 트렌디 (Street & Trendy)</option>
+                <option value="cityboy">시티보이 (City Boy)</option>
+                <option value="gorpcore">고프코어 (Gorpcore / Outdoor)</option>
+            </select>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="nextStep(1)">← 이전</button>
+            <button class="btn btn-primary" onclick="nextStep(3)">다음 단계로 계속 →</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: 체형/퍼스널컬러/날씨 -->
+    <div class="step-content" id="step3">
+        <div class="step-header">
+            <h2>3. 퍼스널 프로필 & 기온 환경</h2>
+            <p>최적의 실루엣과 톤 매칭을 위한 개인화 데이터 입력 단계입니다.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="bodyType">체형 타입 보완</label>
+            <select id="bodyType">
+                <option value="standard">표준 체형 (Standard)</option>
+                <option value="slim">슬림한 체형 (상체 볼륨 보완)</option>
+                <option value="inverted-triangle">역삼각형 (어깨 강조 / 슬림 하의)</option>
+                <option value="rectangle">직사각형 (일자형 / 핏 보완)</option>
+                <option value="round">체격 있는 체형 (체형 커버 중심)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="skinTone">퍼스널 컬러</label>
+            <select id="skinTone">
+                <option value="spring-warm">봄 웜톤 (Spring Warm)</option>
+                <option value="summer-cool">여름 쿨톤 (Summer Cool)</option>
+                <option value="autumn-warm">가을 웜톤 (Autumn Warm)</option>
+                <option value="winter-cool">겨울 쿨톤 (Winter Cool)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="weather">외부 날씨 & 기온 조건</label>
+            <select id="weather">
+                <option value="warm">온화하고 포근함 (18°C ~ 22°C)</option>
+                <option value="hot">무더운 날씨 (25°C 이상)</option>
+                <option value="chilly">일교차가 큰 쌀쌀한 날씨 (10°C ~ 15°C)</option>
+                <option value="cold">겨울 추위 (5°C 이하)</option>
+                <option value="rainy">비/흐림 (습도 높음)</option>
+            </select>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="nextStep(2)">← 이전</button>
+            <button class="btn btn-primary" onclick="generateOutfit()">✨ AI 스타일 매칭 실행</button>
+        </div>
+    </div>
+
+    <!-- AI 로딩 상태 화면 -->
+    <div class="loading-state" id="loadingState">
+        <div class="ai-pulse">⚡</div>
+        <h3 style="font-size:1.1rem; font-weight:700; color:var(--dark-bg); margin-bottom:6px;">AI 스태이징 엔진 작동 중...</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted);">필수 3종(상의/하의/신발) + 레이어드 의류 최적화 매칭 중</p>
+    </div>
+
+    <!-- RESULT: 최종 추천 결과 -->
+    <div class="step-content" id="step4">
+        <div class="step-header">
+            <h2>🎉 추천 스타일링 리포트</h2>
+            <p>요청하신 조건에 맞춘 기본 필수 착장 및 추가 아이템 매칭 결과입니다.</p>
+        </div>
+
+        <div class="result-card">
+            <span class="result-tag" id="resultTag">STYLE REPORT</span>
+            <h3 id="resultTitle" style="font-size:1.2rem; font-weight:800; color:var(--dark-bg);"></h3>
+            
+            <!-- 1. 무조건 추천되는 필수 디폴트 세트 (상의, 하의, 신발) -->
+            <div class="section-title">📌 Essential Set (필수 기본 3종)</div>
+            <div class="default-combination" id="defaultCombination"></div>
+
+            <!-- 2. 추가 확장 매칭 레이어 (아우터 / 잡화 / 액세서리) -->
+            <div class="section-title" id="extraTitle">✨ Plus Addition (추가 포인트 레이어)</div>
+            <div class="extra-combination" id="extraCombination"></div>
+
+            <div class="report-box">
+                <h4>📊 스타일 매칭 분석 정보</h4>
+                <ul class="report-list" id="reportList"></ul>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="resetAll()">🔄 처음부터 새로 설정하기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 1;
+    let selectedPurpose = '데이트 / 소개팅';
+    let wardrobeData = [];
+
+    function selectPurpose(element, purposeText) {
+        document.querySelectorAll('.option-card').forEach(card => card.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedPurpose = purposeText;
+    }
+
+    function updateStepper(step) {
+        for (let i = 1; i <= 3; i++) {
+            const indicator = document.getElementById(`indicator${i}`);
+            if (i < step) {
+                indicator.className = 'step-item completed';
+            } else if (i === step) {
+                indicator.className = 'step-item active';
+            } else {
+                indicator.className = 'step-item';
+            }
+        }
+    }
+
+    function nextStep(targetStep) {
+        document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+        currentStep = targetStep;
+        
+        if (targetStep <= 3) {
+            updateStepper(targetStep);
+            document.getElementById(`step${targetStep}`).classList.add('active');
+        } else if (targetStep === 4) {
+            document.getElementById('step4').classList.add('active');
+        }
+    }
+
+    function validateAndNext(targetStep) {
+        if (wardrobeData.length < 2) {
+            alert('의류 사진을 최소 2개 이상 업로드해 주세요!');
+            return;
+        }
+        nextStep(targetStep);
+    }
+
+    function handleImageUpload(event) {
+        const files = event.target.files;
+        const defaultCategories = ['상의', '하의', '신발', '아우터', '잡화/액세서리'];
+
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const id = Date.now() + Math.random();
+                const randomCategory = defaultCategories[Math.floor(Math.random() * defaultCategories.length)];
+                
+                wardrobeData.push({ id, src: e.target.result, category: randomCategory });
+                renderWardrobe();
+            }
+            reader.readAsDataURL(file);
+        }
+        event.target.value = '';
+    }
+
+    function renderWardrobe() {
+        const grid = document.getElementById('wardrobeGrid');
+        grid.innerHTML = '';
+
+        wardrobeData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'wardrobe-card';
+            card.innerHTML = `
+                <button class="btn-remove" onclick="deleteItem(${item.id})">✕</button>
+                <img src="${item.src}" alt="의류">
+                <select onchange="updateCategory(${item.id}, this.value)">
+                    <option value="상의" ${item.category === '상의' ? 'selected' : ''}>👔 상의</option>
+                    <option value="하의" ${item.category === '하의' ? 'selected' : ''}>👖 하의</option>
+                    <option value="신발" ${item.category === '신발' ? 'selected' : ''}>👟 신발</option>
+                    <option value="아우터" ${item.category === '아우터' ? 'selected' : ''}>🧥 아우터</option>
+                    <option value="잡화/액세서리" ${item.category === '잡화/액세서리' ? 'selected' : ''}>🧢 잡화</option>
+                </select>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function updateCategory(id, newCat) {
+        const item = wardrobeData.find(i => i.id === id);
+        if (item) item.category = newCat;
+    }
+
+    function deleteItem(id) {
+        wardrobeData = wardrobeData.filter(i => i.id !== id);
+        renderWardrobe();
+    }
+
+    function generateOutfit() {
+        document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+        const loading = document.getElementById('loadingState');
+        loading.style.display = 'block';
+
+        setTimeout(() => {
+            loading.style.display = 'none';
+            nextStep(4);
+
+            const bodyType = document.getElementById('bodyType').selectedOptions[0].text;
+            const skinTone = document.getElementById('skinTone').selectedOptions[0].text;
+            const style = document.getElementById('stylePreference').selectedOptions[0].text;
+            const weather = document.getElementById('weather').selectedOptions[0].text;
+
+            const defaultContainer = document.getElementById('defaultCombination');
+            const extraContainer = document.getElementById('extraCombination');
+            defaultContainer.innerHTML = '';
+            extraContainer.innerHTML = '';
+
+            // 1. 필수 3개 카테고리 필터링 (상의, 하의, 신발)
+            const requiredCategories = ['상의', '하의', '신발'];
+            const usedItemIds = new Set();
+
+            requiredCategories.forEach(cat => {
+                const foundItem = wardrobeData.find(item => item.category === cat);
+                const itemBox = document.createElement('div');
+                itemBox.className = 'combo-item default-item';
+
+                if (foundItem) {
+                    usedItemIds.add(foundItem.id);
+                    itemBox.innerHTML = `
+                        <span class="combo-badge">필수</span>
+                        <img src="${foundItem.src}">
+                        <span class="item-cat">${cat}</span>
+                    `;
+                } else {
+                    // 유저가 상/하/신발 중 안 올린 아이템이 있을 경우 AI 매칭 대안 표출
+                    itemBox.innerHTML = `
+                        <span class="combo-badge" style="background:#64748B;">AI 추천</span>
+                        <div class="placeholder-img">기본 ${cat} 매칭</div>
+                        <span class="item-cat">${cat}</span>
+                    `;
+                }
+                defaultContainer.appendChild(itemBox);
+            });
+
+            // 2. 그 외 추가 아이템 필터링 (아우터, 잡화, 남아있는 기타 의류)
+            const extraItems = wardrobeData.filter(item => !usedItemIds.has(item.id));
+
+            if (extraItems.length > 0) {
+                document.getElementById('extraTitle').style.display = 'flex';
+                extraItems.forEach(item => {
+                    const extraBox = document.createElement('div');
+                    extraBox.className = 'extra-item';
+                    extraBox.innerHTML = `
+                        <img src="${item.src}">
+                        <span>+ ${item.category}</span>
+                    `;
+                    extraContainer.appendChild(extraBox);
+                });
+            } else {
+                // 추가 아이템이 없을 경우 가이드 메시지 표시
+                document.getElementById('extraTitle').style.display = 'none';
+                extraContainer.innerHTML = `
+                    <p style="font-size: 0.78rem; color: #94A3B8; padding: 4px 0;">* 아우터나 모자/가방 등 잡화를 추가로 업로드하시면 더 풍성한 스타일링 레이어드가 제공됩니다.</p>
+                `;
+            }
+
+            document.getElementById('resultTag').innerText = `${selectedPurpose} TARGET`;
+            document.getElementById('resultTitle').innerText = `${style} Curation`;
+            
+            document.getElementById('reportList').innerHTML = `
+                <li><strong>필수 3종 코디 구성:</strong> 상의, 하의, 신발 조합을 기본 뼈대로 실루엣을 구성했습니다.</li>
+                <li><strong>TPO 최적화:</strong> ${selectedPurpose} 목적에 맞는 안정적인 톤앤매너 설정 완료.</li>
+                <li><strong>퍼스널 컬러 (${skinTone}):</strong> 상체 시선 집중도를 높여주는 페이스 톤 콤비네이션.</li>
+                <li><strong>체형 보완 (${bodyType}):</strong> 상/하체 균형감을 잡아주는 스태이징 핏.</li>
+                <li><strong>기온 대책 (${weather}):</strong> 쾌적성과 활동성을 고려한 텍스처 매칭.</li>
+            `;
+        }, 1600);
+    }
+
+    function resetAll() {
+        wardrobeData = [];
+        renderWardrobe();
+        nextStep(1);
+    }
+</script>
+
+</body>
+</html>
